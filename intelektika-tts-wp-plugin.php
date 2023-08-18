@@ -11,8 +11,6 @@ License:           GPL v2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Update URI:        https://github.com/Intelektika/tts-wp-plugin/
 */
-include_once __DIR__ . './../action-scheduler/action-scheduler.php';
-
 
 function itts_check_requirements()
 {
@@ -37,21 +35,23 @@ add_action('admin_init', 'itts_check_requirements');
 
 
 // Enqueue scripts and styles
-function tts_enqueue_scripts()
+function itts_enqueue_scripts()
 {
     wp_enqueue_script('jquery'); // Enqueue jQuery if not already enqueued
-    wp_enqueue_script('tts-script', plugin_dir_url(__FILE__) . 'js/tts-script.js', array('jquery'), '1.0', true);
+    wp_enqueue_script('itts-script', plugin_dir_url(__FILE__) . 'js/tts-script.js', array('jquery'), '1.0', true);
 }
-add_action('wp_enqueue_scripts', 'tts_enqueue_scripts');
-function tts_localize_scripts()
+add_action('wp_enqueue_scripts', 'itts_enqueue_scripts');
+function itts_localize_scripts()
 {
-    wp_localize_script('tts-script', 'tts_ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
+    wp_localize_script('itts-script', 'itts_ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
 }
-add_action('wp_enqueue_scripts', 'tts_localize_scripts');
+add_action('wp_enqueue_scripts', 'itts_localize_scripts');
 
 
 // Shortcode for displaying the TTS form
-function tts_shortcode($atts)
+require_once plugin_dir_path(__FILE__) . 'includes/api/intelektika.php';
+require_once plugin_dir_path(__FILE__) . 'includes/api/cache.php';
+function itts_shortcode($atts)
 {
     $atts = shortcode_atts(
         array(
@@ -61,25 +61,25 @@ function tts_shortcode($atts)
         $atts
     );
 
-    $audio_url = get_cached_audio_url($atts['post_id']);
+    $audio_url = IntelektikaTTSFileCache::getAudioURL($atts['post_id']);
 
     ob_start();
     ?>
-    <div id="tts-form">
+    <div id="itts-form">
         <?php if ($audio_url): ?>
             <audio id="audio-player" controls>
                 <source src="<?php echo esc_attr($audio_url); ?>" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
         <?php else: ?>
-            <button id="synthesize-button" data-post-id="<?php echo esc_attr($atts['post_id']); ?>">Synthesize</button>
-            <audio id="audio-player" controls style="display: none;"></audio>
+            <button id="itts-synthesize-button" data-post-id="<?php echo esc_attr($atts['post_id']); ?>">Synthesize</button>
+            <audio id="itts-audio-player" controls style="display: none;"></audio>
         <?php endif; ?>
     </div>
     <?php
     return ob_get_clean();
 }
-add_shortcode('text_to_speech', 'tts_shortcode');
+add_shortcode('text_to_speech', 'itts_shortcode');
 
 
 // AJAX callback for synthesizing text
@@ -177,7 +177,30 @@ add_action('admin_menu', 'itts_settings_page');
 add_action('admin_enqueue_scripts', 'itts_enqueue_admin_scripts');
 add_action('admin_init', 'itts_register_settings');
 
-function generate_audio_on_post_save($post_id)
+function itts_generate_audio($post_id)
+{
+    // Generate audio for the post's content
+    error_log('Generating audio: ' . $post_id);
+    try {
+        $api_key = get_option('itts_api_key');
+        $voice = get_option('itts_voice');
+        $speed = floatval(get_option('itts_speed'));
+        error_log('IntelektikaTTSAPI audio: ' . $post_id);
+        $generator = new IntelektikaTTSAPI($api_key, $voice, $speed);
+        error_log('IntelektikaTTSFileCache audio: ' . $post_id);
+        $cacher = new IntelektikaTTSFileCache($generator);
+        error_log('generateSaveAudio audio: ' . $post_id);
+        $cacher->generateSaveAudio($post_id);
+        error_log('Generating audio done: ' . $post_id);
+    } catch (Exception $e) {
+        error_log($e->getMessage());
+    }
+    
+}
+
+add_action('itts_schedule_task', 'itts_generate_audio', 10, 1);
+
+function itts_enqueue_post($post_id)
 {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
         return; // Ignore autosaves
@@ -186,26 +209,18 @@ function generate_audio_on_post_save($post_id)
     $post_type = get_post_type($post_id);
     if ($post_type !== 'post')
         return;
-
-    // Generate audio for the post's content
-    $post = get_post($post_id);
-    $text = $post->post_content;
-
-    // Call your audio generation function here
-    enqueue_tts_post($text, $post_id);
+    
+    error_log('Schedule generating audio: ' . $post_id);
+    require_once __DIR__ . './../action-scheduler/action-scheduler.php';
+    as_enqueue_async_action('itts_schedule_task', [$post_id], 'itts_plugin', true, 1);
 }
 
-add_action('intelektika_tts_schedule_task', 'intelektika_tts_generate_audio', 10, 1);
 
-function intelektika_tts_enqueue_tts_post($post_id)
+function itts_regenerate_post($post_id, $post_after)
 {
-    as_enqueue_async_action('intelektika_tts_schedule_task', [$post_id], 'intelektika_tts_plugin', true, 1);
+    itts_enqueue_post($post_id);
+    itts_generate_audio($post_id);
 }
 
-add_action('save_post', 'enqueue_tts_post');
-
-function regenerate_audio_on_post_update($post_id, $post_after)
-{
-    enqueue_tts_post($post_id);
-}
-add_action('edit_post', 'regenerate_audio_on_post_update', 10, 2);
+add_action('save_post', 'itts_enqueue_post');
+add_action('edit_post', 'itts_regenerate_post', 10, 2);
