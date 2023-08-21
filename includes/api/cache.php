@@ -19,9 +19,14 @@ class IntelektikaTTSFileCache
         if (!file_exists($dir)) {
             mkdir($dir);
         }
-        $audio_content = $this->generator->generateAudio($post_id);
-        if ($audio_content !== null) {
-            file_put_contents($file_name, $audio_content);
+        IntelektikaTTSFileCache::cleanCache($file_name);
+        $result = $this->generator->generateAudio($post_id);
+        error_log('got result');
+        if ($result['error']) {
+            error_log('Error: ' . $result['error']);
+        } else {
+            file_put_contents($file_name, base64_decode($result['result']));
+            error_log('Saved file: ' . $file_name);
         }
     }
 
@@ -29,6 +34,17 @@ class IntelektikaTTSFileCache
     {
         $upload_dir = wp_upload_dir();
         return trailingslashit($upload_dir['basedir']) . IntelektikaTTSFileCache::getFileName($post_id);
+    }
+
+    static function cleanCache($file_name)
+    {
+        if (file_exists($file_name)) {
+            if (unlink($file_name)) {
+                error_log('Deleted: ' . $file_name);
+            } else {
+                error_log('Cannot delete : ' . $file_name);
+            }
+        }
     }
 
     static function getFileName($post_id)

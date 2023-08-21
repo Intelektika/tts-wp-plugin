@@ -12,4 +12,34 @@ jQuery(document).ready(function($) {
         var speedValue = $(this).val();
         $(this).next('.speed-value').text(speedValue);
     });
+
+    $('#itts-test-api-button').click(function() {
+        $('.itts-test-api-result').text('Testing API settings...');
+        $('#itts-test-audio-player').hide();
+
+        // Make an AJAX call to your custom AJAX handler
+        $.ajax({
+            type: 'POST',
+            url: itts_admin_ajax_object.ajax_url, 
+            data: {
+                action: 'itts_test_api',
+                voice: $('#itts_voice').val(),
+                speed: $('#itts_speed').val(),
+                apiKey: $('#itts_api_key').val(),
+            },
+            success: function(response) {
+                console.log(response)
+                if (response && response.success) {
+                    $('.itts-test-api-result').text('Sucess!');
+                    $('#itts-test-audio-player').attr('src', response.data).show().get(0).play();
+                } else {
+                    $('.itts-test-api-result').text('Failed. Response: ' + response.data);
+                    $('#itts-test-audio-player').hide();
+                }   
+            },
+            error: function() {
+                $('.itts-test-api-result').text('API test failed. Please check your API settings.');
+            }
+        });
+    });
 });

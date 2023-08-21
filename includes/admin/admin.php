@@ -14,8 +14,7 @@ function itts_settings_page()
 
 function itts_register_settings()
 {
-    register_setting('itts-settings-group', 'itts_api_key');
-    register_setting('itts-settings-group', 'itts_voice');
-    register_setting('itts-settings-group', 'itts_speed');
+    register_setting('itts-settings-group', 'itts_api_key', array('type' => 'string', 'default' => ''));
+    register_setting('itts-settings-group', 'itts_voice', array('type' => 'string', 'default' => 'astra'));
+    register_setting('itts-settings-group', 'itts_speed', array('type' => 'number', 'default' => 1));
 }
-

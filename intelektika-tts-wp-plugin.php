@@ -175,7 +175,34 @@ require_once plugin_dir_path(__FILE__) . 'includes/admin/admin.php';
 require_once plugin_dir_path(__FILE__) . 'includes/admin/settings-page.php';
 add_action('admin_menu', 'itts_settings_page');
 add_action('admin_enqueue_scripts', 'itts_enqueue_admin_scripts');
+add_action('admin_enqueue_scripts', 'itts_admin_localize_scripts');
 add_action('admin_init', 'itts_register_settings');
+add_action('wp_ajax_itts_test_api', 'itts_test_api_handler');
+
+function itts_test_api_handler()
+{
+    error_log('Invoke itts_test_api_handler');
+    try {
+        $api_key = sanitize_text_field($_POST['apiKey']);
+        $voice = sanitize_text_field($_POST['voice']);
+        $speed = floatval($_POST['speed']);
+        error_log('voice'. $voice);
+        error_log('api_key'. $api_key);
+        error_log('speed'. $speed);
+        $generator = new IntelektikaTTSAPI($api_key, $voice, $speed);
+        $result = $generator->generateForText("Sveiki! Jūs klausote sugeneruotą tekstą.");
+        error_log('got result');
+        if ($result['error']) {
+            error_log('Error: ' . $result['error']);
+            wp_send_json_error('Error synthesizing text. ' . $result['error']);
+        } else {
+            wp_send_json_success('data:audio/mpeg;base64,' . $result['result']);
+        }
+    } catch (Exception $e) {
+        error_log($e->getMessage());
+        wp_send_json_error('Error synthesizing text.');
+    }
+}
 
 function itts_generate_audio($post_id)
 {
@@ -185,17 +212,14 @@ function itts_generate_audio($post_id)
         $api_key = get_option('itts_api_key');
         $voice = get_option('itts_voice');
         $speed = floatval(get_option('itts_speed'));
-        error_log('IntelektikaTTSAPI audio: ' . $post_id);
         $generator = new IntelektikaTTSAPI($api_key, $voice, $speed);
-        error_log('IntelektikaTTSFileCache audio: ' . $post_id);
         $cacher = new IntelektikaTTSFileCache($generator);
-        error_log('generateSaveAudio audio: ' . $post_id);
         $cacher->generateSaveAudio($post_id);
         error_log('Generating audio done: ' . $post_id);
     } catch (Exception $e) {
         error_log($e->getMessage());
     }
-    
+
 }
 
 add_action('itts_schedule_task', 'itts_generate_audio', 10, 1);
@@ -209,7 +233,7 @@ function itts_enqueue_post($post_id)
     $post_type = get_post_type($post_id);
     if ($post_type !== 'post')
         return;
-    
+
     error_log('Schedule generating audio: ' . $post_id);
     require_once __DIR__ . './../action-scheduler/action-scheduler.php';
     as_enqueue_async_action('itts_schedule_task', [$post_id], 'itts_plugin', true, 1);
@@ -219,7 +243,6 @@ function itts_enqueue_post($post_id)
 function itts_regenerate_post($post_id, $post_after)
 {
     itts_enqueue_post($post_id);
-    itts_generate_audio($post_id);
 }
 
 add_action('save_post', 'itts_enqueue_post');
