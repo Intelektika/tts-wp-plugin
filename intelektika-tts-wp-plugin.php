@@ -186,9 +186,6 @@ function itts_test_api_handler()
         $api_key = sanitize_text_field($_POST['apiKey']);
         $voice = sanitize_text_field($_POST['voice']);
         $speed = floatval($_POST['speed']);
-        error_log('voice'. $voice);
-        error_log('api_key'. $api_key);
-        error_log('speed'. $speed);
         $generator = new IntelektikaTTSAPI($api_key, $voice, $speed);
         $result = $generator->generateForText("Sveiki! Jūs klausote sugeneruotą tekstą.");
         error_log('got result');
