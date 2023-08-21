@@ -22,21 +22,17 @@ class IntelektikaTTSAPI
         $text = $post->post_content;
 
         if (!has_shortcode($text, ITTS_SHORTCODE)) {
+            error_log('Skip (no shortcode) synthesizing text for post ID: ' . $post_id);
             return [];
         }
-
-        // Log the post ID
         error_log('Synthesizing text for post ID: ' . $post_id);
         $text_without_shortcodes = preg_replace('/\[.*?\]/', '', $text);
-
-        error_log('Post text: ' . $text_without_shortcodes);
 
         return $this->generateForText($text_without_shortcodes);
     }
 
     public function generateForText($text)
     {
-        // Make API request to Google Text-to-Speech API
         $url = 'https://sinteze.intelektika.lt/synthesis.service/prod/synthesize';
         $data = array(
             "text" => $text,

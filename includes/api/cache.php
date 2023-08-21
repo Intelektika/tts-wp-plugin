@@ -20,8 +20,8 @@ class IntelektikaTTSFileCache
             error_log('Already generating: ' . $post_id);
             return;
         }
-        
-        set_transient(IntelektikaTTSFileCache::lockKey($post_id), true, 60);
+
+        set_transient(IntelektikaTTSFileCache::lockKey($post_id), true, 120);
         delete_transient(IntelektikaTTSFileCache::waitingKey($post_id));
 
         IntelektikaTTSFileCache::cleanCache($post_id);
@@ -30,8 +30,7 @@ class IntelektikaTTSFileCache
         if ($result['error']) {
             error_log('Error: ' . $result['error']);
             IntelektikaTTSFileCache::saveError($post_id, $result['error']);
-        }
-        else if ($result['result']) {
+        } else if ($result['result']) {
             $file_name = IntelektikaTTSFileCache::getFullFileName($post_id);
             $dir = dirname($file_name);
             if (!file_exists($dir)) {
@@ -42,7 +41,8 @@ class IntelektikaTTSFileCache
         } else {
             error_log('No audio file created for ' . $post_id);
         }
-        delete_transient(IntelektikaTTSFileCache::lockKey($post_id));
+        // drop lock after 15 sec
+        set_transient(IntelektikaTTSFileCache::lockKey($post_id), true, 15);
     }
 
     static function saveError($post_id, $error)
@@ -102,9 +102,12 @@ class IntelektikaTTSFileCache
         return 'itts-generating-post-' . $post_id;
     }
 
-    static function markWaiting($post_id)
+    static function enqueueJob($post_id)
     {
-        set_transient(IntelektikaTTSFileCache::waitingKey($post_id), "waiting", 3*60);
+        IntelektikaTTSFileCache::cleanCache($post_id);
+        set_transient(IntelektikaTTSFileCache::waitingKey($post_id), "waiting", 3 * 60);
+        require_once __DIR__ . './../../../action-scheduler/action-scheduler.php';
+        as_enqueue_async_action('itts_schedule_task', [$post_id], 'itts_plugin', true, 1);
     }
 
     static function getAudioURL($post_id)

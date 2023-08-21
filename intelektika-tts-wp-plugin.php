@@ -112,9 +112,7 @@ function itts_enqueue_post($post_id)
         return;
 
     error_log('Schedule generating audio: ' . $post_id);
-    require_once __DIR__ . './../action-scheduler/action-scheduler.php';
-    as_enqueue_async_action('itts_schedule_task', [$post_id], 'itts_plugin', true, 1);
-    IntelektikaTTSFileCache::markWaiting($post_id);
+    IntelektikaTTSFileCache::enqueueJob($post_id);
 }
 
 
