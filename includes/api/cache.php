@@ -24,9 +24,11 @@ class IntelektikaTTSFileCache
         error_log('got result');
         if ($result['error']) {
             error_log('Error: ' . $result['error']);
-        } else {
+        } if ($result['result']) {
             file_put_contents($file_name, base64_decode($result['result']));
             error_log('Saved file: ' . $file_name);
+        } else {
+            error_log('No audio file created for '. $post_id);
         }
     }
 

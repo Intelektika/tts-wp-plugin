@@ -16,8 +16,6 @@ jQuery(document).ready(function($) {
     $('#itts-test-api-button').click(function() {
         $('.itts-test-api-result').text('Testing API settings...');
         $('#itts-test-audio-player').hide();
-
-        // Make an AJAX call to your custom AJAX handler
         $.ajax({
             type: 'POST',
             url: itts_admin_ajax_object.ajax_url, 
@@ -30,7 +28,7 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 console.log(response)
                 if (response && response.success) {
-                    $('.itts-test-api-result').text('Sucess!');
+                    $('.itts-test-api-result').text('Success! You can start adding [itts_audio] shortcode to your posts.');
                     $('#itts-test-audio-player').attr('src', response.data).show().get(0).play();
                 } else {
                     $('.itts-test-api-result').text('Failed. Response: ' + response.data);

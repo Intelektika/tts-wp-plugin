@@ -1,4 +1,7 @@
 <?php
+
+require_once plugin_dir_path(__FILE__) . './../consts.php';
+
 class IntelektikaTTSAPI
 {
     private $key;
@@ -18,8 +21,8 @@ class IntelektikaTTSAPI
         $post = get_post($post_id);
         $text = $post->post_content;
 
-        if (!has_shortcode($text, 'text_to_speech')) {
-            return;
+        if (!has_shortcode($text, ITTS_SHORTCODE)) {
+            return [];
         }
 
         // Log the post ID

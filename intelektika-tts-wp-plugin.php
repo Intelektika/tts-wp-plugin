@@ -12,6 +12,8 @@ License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Update URI:        https://github.com/Intelektika/tts-wp-plugin/
 */
 
+require_once plugin_dir_path(__FILE__) . 'includes/consts.php';
+
 function itts_check_requirements()
 {
     if (is_admin() && current_user_can('activate_plugins') && !is_plugin_active('action-scheduler/action-scheduler.php')) {
@@ -34,141 +36,13 @@ function itts_action_scheduler_plugin_notice()
 add_action('admin_init', 'itts_check_requirements');
 
 
-// Enqueue scripts and styles
-function itts_enqueue_scripts()
-{
-    wp_enqueue_script('jquery'); // Enqueue jQuery if not already enqueued
-    wp_enqueue_script('itts-script', plugin_dir_url(__FILE__) . 'js/tts-script.js', array('jquery'), '1.0', true);
-}
-add_action('wp_enqueue_scripts', 'itts_enqueue_scripts');
-function itts_localize_scripts()
-{
-    wp_localize_script('itts-script', 'itts_ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
-}
-add_action('wp_enqueue_scripts', 'itts_localize_scripts');
-
-
 // Shortcode for displaying the TTS form
 require_once plugin_dir_path(__FILE__) . 'includes/api/intelektika.php';
 require_once plugin_dir_path(__FILE__) . 'includes/api/cache.php';
-function itts_shortcode($atts)
-{
-    $atts = shortcode_atts(
-        array(
-            'post_id' => get_the_ID(),
-            // Default to the current post's ID
-        ),
-        $atts
-    );
+require_once plugin_dir_path(__FILE__) . 'includes/public/public.php';
 
-    $audio_url = IntelektikaTTSFileCache::getAudioURL($atts['post_id']);
+add_shortcode(ITTS_SHORTCODE, 'itts_shortcode');
 
-    ob_start();
-    ?>
-    <div id="itts-form">
-        <?php if ($audio_url): ?>
-            <audio id="audio-player" controls>
-                <source src="<?php echo esc_attr($audio_url); ?>" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-        <?php else: ?>
-            <button id="itts-synthesize-button" data-post-id="<?php echo esc_attr($atts['post_id']); ?>">Synthesize</button>
-            <audio id="itts-audio-player" controls style="display: none;"></audio>
-        <?php endif; ?>
-    </div>
-    <?php
-    return ob_get_clean();
-}
-add_shortcode('text_to_speech', 'itts_shortcode');
-
-
-// AJAX callback for synthesizing text
-function synthesize_text_callback()
-{
-
-    error_log('Call synthesize_text_callback');
-
-    $text = sanitize_text_field($_POST['text']);
-    $post_id = intval($_POST['post_id']);
-    $api_key = 'YOUR_GOOGLE_TTS_API_KEY'; // Replace with your API key
-
-    $upload_dir = wp_upload_dir();
-    $cache_dir = trailingslashit($upload_dir['basedir']) . 'tts_cache/';
-    if (!file_exists($cache_dir)) {
-        mkdir($cache_dir);
-    }
-
-    $cache_file = $cache_dir . 'post_' . $post_id . '.mp3';
-
-    error_log('Looking for: ' . $cache_file);
-    if (file_exists($cache_file)) {
-        error_log('got cache');
-        $cache_url = trailingslashit($upload_dir['baseurl']) . 'tts_cache/post_' . $post_id . '.mp3';
-        wp_send_json_success($cache_url);
-    }
-
-    error_log('Received text for synthesis: ' . $text);
-
-    // Get the post content
-    $post = get_post($post_id);
-    $text_post = $post->post_content;
-
-    // Log the post ID
-    error_log('Synthesizing text for post ID: ' . $post_id);
-    $text_without_shortcodes = preg_replace('/\[.*?\]/', '', $text_post);
-
-    error_log('Post text: ' . $text_without_shortcodes);
-
-    $api_key = get_option('tts_api_key');
-    $voice = get_option('tts_voice');
-    $speed = floatval(get_option('tts_speed'));
-
-    // Make API request to Google Text-to-Speech API
-    $url = 'https://sinteze.intelektika.lt/synthesis.service/prod/synthesize';
-    $data = array(
-        "text" => $text_without_shortcodes,
-        "outputFormat" => "mp3",
-        "outputTextFormat" => "none",
-        "speed" => $speed,
-        "voice" => $voice
-    );
-
-    $headers = array('Content-Type: application/json');
-    if (!empty($api_key)) {
-        $headers[] = 'Authorization: Key ' . $api_key;
-    }
-
-    $response = wp_safe_remote_post(
-        $url,
-        array(
-            'headers' => $headers,
-            'body' => wp_json_encode($data)
-        )
-    );
-
-    if (is_wp_error($response)) {
-        wp_send_json_error('Error synthesizing text.');
-    }
-
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body);
-    error_log('Got: ' . wp_json_encode($data));
-
-    if (!empty($data->audioAsString)) {
-        $audio_url = 'data:audio/mpeg;base64,' . $data->audioAsString;
-        error_log('Generated audio URL: ' . $audio_url);
-        $audio_content = base64_decode($data->audioAsString);
-        file_put_contents($cache_file, $audio_content);
-
-        $cache_url = trailingslashit($upload_dir['baseurl']) . 'tts_cache/post_' . $post_id . '.mp3';
-        wp_send_json_success($cache_url);
-    } else {
-        error_log('Error synthesizing text.');
-        wp_send_json_error('Error synthesizing text.');
-    }
-}
-add_action('wp_ajax_synthesize_text', 'synthesize_text_callback');
-add_action('wp_ajax_nopriv_synthesize_text', 'synthesize_text_callback');
 
 // Add a settings page to the WordPress admin menu
 require_once plugin_dir_path(__FILE__) . 'includes/admin/admin.php';
