@@ -12,6 +12,7 @@ License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 Update URI:        https://github.com/Intelektika/tts-wp-plugin/
 */
 
+define( 'ITTS_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 require_once plugin_dir_path(__FILE__) . 'includes/consts.php';
 
 function itts_check_requirements()
@@ -42,6 +43,11 @@ require_once plugin_dir_path(__FILE__) . 'includes/api/cache.php';
 require_once plugin_dir_path(__FILE__) . 'includes/public/public.php';
 
 add_shortcode(ITTS_SHORTCODE, 'itts_shortcode');
+function itts_enqueue_styles()
+{
+    wp_enqueue_style('itts-style', plugin_dir_url(__FILE__) . 'includes/public/css/itts-styles.css');
+}
+add_action('wp_enqueue_scripts', 'itts_enqueue_styles');
 
 
 // Add a settings page to the WordPress admin menu
@@ -108,6 +114,7 @@ function itts_enqueue_post($post_id)
     error_log('Schedule generating audio: ' . $post_id);
     require_once __DIR__ . './../action-scheduler/action-scheduler.php';
     as_enqueue_async_action('itts_schedule_task', [$post_id], 'itts_plugin', true, 1);
+    IntelektikaTTSFileCache::markWaiting($post_id);
 }
 
 

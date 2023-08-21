@@ -1,0 +1,12 @@
+.itts-admin-message {
+    font-size: 14px;
+    display: inline-block;
+    border: 2px solid goldenrod;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.itts-admin-error {
+    font-size: 18px;
+    color: red;
+}
