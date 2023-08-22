@@ -45,19 +45,13 @@ If there is an error then it will be displayed in a post when opened in the prev
 
 ## Development
 
-1. Init WP environment
-    ```bash
-    cd examples && make start
-    mkdir -p wp_data
-    docker compose up -d
-    ```
+1. Init WP environment: `cd examples && make up`
 1. Copy plugin code to WP plugins dir: `make deploy`.
 
 1. Login to WP, and activate the plugin using WP Admin tools.
 
 ### Clean dev environment
+
 ```bash
-cd examples
-docker compose down
-rm -rf wp-data
+cd examples && make clean
 ```
