@@ -69,16 +69,34 @@ function itts_test_api_handler()
         $generator = new IntelektikaTTSAPI($api_key, $voice, $speed);
         $result = $generator->generateForText("Sveiki! Jūs klausote sugeneruotą tekstą.");
         error_log('got result');
-        if ($result['error']) {
+        if ( isset( $result["error"] ) ) {
             error_log('Error: ' . $result['error']);
-            wp_send_json_error('Error synthesizing text. ' . $result['error']);
-        } else {
-            wp_send_json_success('data:audio/mpeg;base64,' . $result['result']);
-        }
+        } 
+        wp_send_json(map_response($result));
     } catch (Exception $e) {
         error_log($e->getMessage());
         wp_send_json_error('Error synthesizing text.');
     }
+}
+
+function map_response($resp)
+{
+    $result = array( 'success' => false );
+    if ( isset( $resp["result"] ) ) {
+        $result['data'] = 'data:audio/mpeg;base64,' . $resp['result'];
+        $result['success'] = true;
+    }
+    if ( isset( $resp["error"] ) ) {
+        $result['error'] = $resp["error"];
+        $result['success'] = false;
+    } 
+    if ( isset( $resp["limit"] ) ) {
+        $result['limit'] = $resp['limit'];
+    }
+    if ( isset( $resp["remaining"] ) ) {
+        $result ['remaining'] = $resp['remaining'];
+    }
+    return $result; 
 }
 
 function itts_generate_audio($post_id)
@@ -96,7 +114,6 @@ function itts_generate_audio($post_id)
     } catch (Exception $e) {
         error_log($e->getMessage());
     }
-
 }
 
 add_action('itts_schedule_task', 'itts_generate_audio', 10, 1);

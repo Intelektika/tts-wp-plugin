@@ -65,6 +65,12 @@ function itts_settings_form()
                         <audio id="itts-test-audio-player" controls style="display: none;"></audio>
                     </td>
                 </tr>
+                <tr valign="top">
+                    <th scope="row"></th>
+                    <td>
+                        <span id="itts-quota-info"></span>
+                    </td>
+                </tr>
             </table>
             <?php submit_button(); ?>
         </form>

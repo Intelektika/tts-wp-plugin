@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var testApiButton = document.querySelector('#itts-test-api-button');
     var testApiResult = document.querySelector('.itts-test-api-result');
     var testAudioPlayer = document.querySelector('#itts-test-audio-player');
+    var quotaInfo = document.querySelector('#itts-quota-info');
 
     if (showHideKeyButton) {
         showHideKeyButton.addEventListener('click', function () {
@@ -26,21 +27,30 @@ document.addEventListener('DOMContentLoaded', function () {
     if (testApiButton) {
         testApiButton.addEventListener('click', function () {
             testApiResult.textContent = 'Testing API settings...';
+            quotaInfo.textContent = "";
             testAudioPlayer.style.display = 'none';
             var xhr = new XMLHttpRequest();
             xhr.open('POST', itts_admin_ajax_object.ajax_url);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
+                    console.log("done")
                     if (xhr.status === 200) {
                         var response = JSON.parse(xhr.responseText);
+                        if (quotaInfo) {
+                            const remaining = response.remaining; 
+                            const limit = response.limit; 
+                            if (limit && remaining) {
+                                quotaInfo.textContent = `Quota: remaining ${remaining} symbols from ${limit}`;
+                            }
+                        }
                         if (response && response.success) {
                             testApiResult.textContent = 'Success! You can start adding [itts_audio] shortcode to your posts.';
                             testAudioPlayer.setAttribute('src', response.data);
                             testAudioPlayer.style.display = 'block';
                             testAudioPlayer.play();
                         } else {
-                            testApiResult.textContent = 'Failed. Response: ' + response.data;
+                            testApiResult.textContent = 'Failed. Response: ' + response.error;
                             testAudioPlayer.style.display = 'none';
                         }
                     } else {

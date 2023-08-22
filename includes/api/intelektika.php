@@ -44,7 +44,7 @@ class IntelektikaTTSAPI
         );
         if (!empty($this->voice)) {
             $data["voice"] = $this->voice;
-        } 
+        }
 
         $headers = array('Content-Type' => 'application/json');
 
@@ -63,15 +63,17 @@ class IntelektikaTTSAPI
             return ['error' => 'Error synthesizing text.'];
         } else {
             $response_code = wp_remote_retrieve_response_code($response);
+            $remaining = wp_remote_retrieve_header($response, "x-rate-limit-remaining");
+            $limit = wp_remote_retrieve_header($response, "x-rate-limit-limit");
             error_log('Response : ' . $response_code);
             if ($response_code === 200) {
                 $body = wp_remote_retrieve_body($response);
                 $data = json_decode($body);
-                return ['result' => $data->audioAsString, 'error' => null];
+                return ['result' => $data->audioAsString, 'error' => null, 'remaining' => $remaining, 'limit' => $limit];
             } else {
                 $body = wp_remote_retrieve_body($response);
                 error_log('Got error: ' . $response_code . '. Body: ' . $body);
-                return ['error' => 'TTS Error. Msg:' . $body];
+                return ['error' => 'TTS Error. Msg:' . $body, 'remaining' => $remaining, 'limit' => $limit];
             }
         }
     }
