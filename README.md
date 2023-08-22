@@ -32,8 +32,8 @@ To use the plugin you need an API key. Contact info@intelektika.lt to acquire it
 
 ## Usage
 
-The plugin will add an audio component in a post at the position of a newly inserted shortcode `[itts_audio]`. To add it into a post:
-1. Open a post (new or existing) in an edit mode.
+The plugin will add an audio component in a post at the position of a newly inserted shortcode `[itts_audio]`. To add it to a post:
+1. Open a post (new or existing) in edit mode.
 1. Insert `[itts_audio]` shortcode. Preferably on the first section after a title.
 1. Save/publish a post.
 
@@ -41,3 +41,23 @@ The plugin will synthesize an audio of a post and it will cache it in the **[WP 
 The audio will be regenerated on every save/update of a post. 
 
 If there is an error then it will be displayed in a post when opened in the preview mode by an editor. 
+
+
+## Development
+
+1. Init WP environment
+    ```bash
+    cd examples && make start
+    mkdir -p wp_data
+    docker compose up -d
+    ```
+1. Copy plugin code to WP plugins dir: `make deploy`.
+
+1. Login to WP, and activate the plugin using WP Admin tools.
+
+### Clean dev environment
+```bash
+cd examples
+docker compose down
+rm -rf wp-data
+```
