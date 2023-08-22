@@ -21,10 +21,11 @@ function itts_shortcode($atts)
     ?>
     <div id="itts-form">
         <?php if ($audio_url): ?>
-            <audio id="audio-player" controls>
+            <audio id="itts-audio-player" controls style="display: none;">
                 <source src="<?php echo esc_attr($audio_url); ?>" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
+            <button id="itts-play-audio-button">Klausytis</button>
         <?php elseif ($edit_mode): ?>
             <div class="itts-admin-message">
                 <span>Here you should see an audio component.</span><br>
@@ -36,6 +37,7 @@ function itts_shortcode($atts)
             </div>
         <?php endif; ?>
     </div>
+    <script src="<?php echo plugin_dir_url(__FILE__) . 'js/itts-script.js'; ?>"></script>
     <?php
     return ob_get_clean();
 }
