@@ -2,7 +2,7 @@
 /*
 Plugin Name:       Intelektika Text-to-Speech Plugin
 Description:       Convert text of a post to spoken audio using the Intelektika TTS API.
-Version:           1.0.0
+Version:           1.0.1
 Author:            Airenas Vaiciunas
 Plugin URI:        https://github.com/Intelektika/tts-wp-plugin/
 Requires at least: 5.2

@@ -79,5 +79,5 @@ function itts_admin_localize_scripts()
 function itts_enqueue_admin_scripts()
 {
     wp_enqueue_script('jquery'); // Enqueue jQuery if not already enqueued
-    wp_enqueue_script('itts-admin-script', plugin_dir_url(__FILE__) . 'js/tts-admin.js', array('jquery'), '1.0', true);
+    wp_enqueue_script('itts-admin-script', plugin_dir_url(__FILE__) . 'js/itts-admin.js', array(), '1.0.1', true);
 }
