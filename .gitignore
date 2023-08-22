@@ -1,1 +1,3 @@
 Makefile.options
+examples/wp_data/**
+examples/.env

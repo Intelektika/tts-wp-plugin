@@ -33,14 +33,19 @@ class IntelektikaTTSAPI
 
     public function generateForText($text)
     {
+        error_log('$this->voice : ' . $this->voice);
+        error_log('$this->speed : ' . $this->speed);
         $url = 'https://sinteze.intelektika.lt/synthesis.service/prod/synthesize';
         $data = array(
             "text" => $text,
             "outputFormat" => "mp3",
             "outputTextFormat" => "none",
             "speed" => $this->speed,
-            "voice" => $this->voice
         );
+        if (!empty($this->voice)) {
+            $data["voice"] = $this->voice;
+        } 
+
         $headers = array('Content-Type' => 'application/json');
 
         if (!empty($this->key)) {
