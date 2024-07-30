@@ -51,11 +51,14 @@ class IntelektikaTTSAPI
         if (!empty($this->key)) {
             $headers['Authorization'] = 'Key ' . $this->key;
         }
+        $timeout = 45;
+        error_log('timeout set  : ' . $timeout);
         $response = wp_safe_remote_post(
             $url,
             array(
                 'headers' => $headers,
-                'body' => wp_json_encode($data)
+                'body' => wp_json_encode($data),
+                'timeout' => $timeout, 
             )
         );
 
